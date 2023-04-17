@@ -1,35 +1,47 @@
 def read_input():
+    input_type = input().rstrip()
+
+    if input_type == "I":
+        pattern = input().rstrip()
+        text = input().rstrip()
+    elif input_type == "F":
+        file_path = "06"
+        with open(f"tests/{file_path}", "r") as file:
+            pattern = file.readline().rstrip()
+            text = file.readline().rstrip()
     
-    pattern = input().rstrip()
-    text = input().rstrip()
     return pattern, text
 
-def print_occurrences(output):
-    
-    print(' '.join(map(str, output)))
+def print_occurrences(occurrences):
+    print(' '.join(map(str, occurrences)))
 
-def get_occurrences(pattern, text):
-    
-    occurrences = []
-    p_len = len(pattern)
-    t_len = len(text)
+def get_hash(string):
+    Q, B = 256, 13
+    length = len(string)
+    string_hash = 0
+    for i in range(length):
+        unicode_value = ord(string[i])
+        string_hash = (B * string_hash + unicode_value) % Q
+    return string_hash
 
-    
-    p_hash = sum([ord(pattern[i]) * (101 ** i) for i in range(p_len)]) % 10**9 + 7
-    t_hash = sum([ord(text[i]) * (101 ** i) for i in range(p_len)]) % 10**9
-    
-    for i in range(t_len - p_len + 1):
-        if p_hash == t_hash:
-            if text[i:i+p_len] == pattern:
-                occurrences.append(i)
-        if i < t_len - p_len:
-            # Update the hash value of the next window.
-            t_hash = (t_hash - ord(text[i]) * (101 ** (p_len - 1))) % 10**9
-            t_hash = (t_hash * 101 + ord(text[i+p_len])) % 10**9
-
-    
-    return sorted(occurrences)
-
+def get_occurrences(pattern, text): 
+    Q, B = 256, 13
+    pattern_length, text_length = len(pattern), len(text)
+    multiplier = 1
+    for i in range(1, pattern_length):
+        multiplier = (multiplier * B) % Q
+    pattern_hash = get_hash(pattern)
+    text_hash = get_hash(text[:pattern_length])
+    positions = []
+    for i in range(text_length - pattern_length + 1):
+        if pattern_hash == text_hash and pattern == text[i:i+pattern_length]:
+            positions.append(str(i))
+        if i < text_length - pattern_length:
+            first_char_unicode = ord(text[i])
+            last_char_unicode = ord(text[i+pattern_length])
+            text_hash = ((text_hash - first_char_unicode * multiplier) * B + last_char_unicode) % Q
+    return positions
 
 if __name__ == '__main__':
-    print_occurrences(get_occurrences(*read_input()))
+    occurrences = get_occurrences(*read_input())
+    print_occurrences(occurrences)
